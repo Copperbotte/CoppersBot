@@ -1,10 +1,16 @@
-from __future__ import print_function
+#this was modified from these stack overflow samples.
+#https://stackoverflow.com/questions/38421060/how-to-use-google-drive-api-for-python
+#https://stackoverflow.com/questions/36173356/google-drive-api-download-files-python-no-files-downloaded
 from googleapiclient.discovery import build
 from httplib2 import Http
 from oauth2client import file, client, tools
+import io
+from apiclient.http import MediaIoBaseDownload
+
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
+#SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
+SCOPES = 'https://www.googleapis.com/auth/drive'
 
 def main():
     """Shows basic usage of the Drive v3 API.
@@ -31,7 +37,15 @@ def main():
 
     fileid = "1pcW5wkpwrhhAH2brE6yofQcjilgF7seZ"
     results = service.files().get_media(fileId=fileid)
-    fh = io
+    fh = io.BytesIO()
+    downloader = MediaIoBaseDownload(fh, results)
+    done = False
+    while not done:
+        status, done = downloader.next_chunk()
+        print("Download %d%%." % int(status.progress() * 100))
+    f = open("download.xlsx", "wb")
+    f.write(fh.read())
+    f.close()
     
 if __name__ == '__main__':
     main()
