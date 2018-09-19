@@ -5,6 +5,7 @@ from googleapiclient.discovery import build
 from httplib2 import Http
 from oauth2client import file, client, tools
 import io
+import zipfile
 from apiclient.http import MediaIoBaseDownload
 
 
@@ -12,7 +13,8 @@ from apiclient.http import MediaIoBaseDownload
 #SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
 SCOPES = 'https://www.googleapis.com/auth/drive'
 
-def main():
+#def main():
+if True:
     """Shows basic usage of the Drive v3 API.
     Prints the names and ids of the first 10 files the user has access to.
     """
@@ -37,15 +39,17 @@ def main():
 
     fileid = "1pcW5wkpwrhhAH2brE6yofQcjilgF7seZ"
     results = service.files().get_media(fileId=fileid)
-    fh = io.BytesIO()
+    fh = io.BytesIO()#io.FileIO("download.xlsx", "wb")
     downloader = MediaIoBaseDownload(fh, results)
     done = False
     while not done:
         status, done = downloader.next_chunk()
         print("Download %d%%." % int(status.progress() * 100))
-    f = open("download.xlsx", "wb")
-    f.write(fh.read())
-    f.close()
+    z = zipfile.ZipFile(fh)
+    for n in z.namelist():
+        print(n)
+    #f.write(fh.read())
+    #f.close()
     
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+#    main()
