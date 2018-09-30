@@ -13,8 +13,60 @@ from apiclient.http import MediaIoBaseDownload
 #SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
 SCOPES = 'https://www.googleapis.com/auth/drive'
 
-#def main():
-if True:
+def displayline(stack, s):
+    if 0 < len(s):
+        print(' '*4*len(stack) + s)
+
+def xmlformatter(xmlfile):
+    header = "b\'<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\\r\\n"#both files start with this same header
+    xmlfile = str(xmlfile)[len(header):] #strip header
+    #subdivide string into encapsulating tags
+    #find a tag, put its prefix string into an array
+    #if a tag is a closing tag, pop the last tag.
+    #if a tag is its own closing tag, treat it as a string.
+    #else, push the tag onto the stack.
+    #xmlrecursive(xmlfile)
+
+    string = xmlfile
+    
+    stack = []
+    while 0 != len(string):
+        #find a tag
+        t0 = string.find('<')
+        #t1 = string[t0+1].find('<') #checks if the tag is incomplete, or a less than sign.
+        t2 = string.find('>')
+
+        if t0 == -1: #if there are no more tags, stop loop
+            print(' '*4*len(stack) + string)
+            break
+
+        end = string[t0+1] == '/' #closing tag
+        if end:
+            stack.pop()
+
+        displayline(stack, string[0:t0]) #before the tag
+        displayline(stack, string[t0:t2+1]) #the tag
+
+        if not end and string[t2-1] != '/': #prevents a stack if the tag self closes
+            tag = string[t0+1:t2]
+            
+            stack.append(tag)
+        
+        string = string[t2+1:]
+    
+    
+    
+    #tag = string[string.find('<')+1:string.find('>')]
+    #if tag[-1] == '/':
+    #    tag = tag[:-2]
+    #tag = tag.split()
+    #print(tag.split())
+    #print(
+
+
+    
+    
+def main():
     """Shows basic usage of the Drive v3 API.
     Prints the names and ids of the first 10 files the user has access to.
     """
@@ -48,8 +100,9 @@ if True:
     z = zipfile.ZipFile(fh)
     for n in z.namelist():
         print(n)
-    #f.write(fh.read())
-    #f.close()
+    xmlformatter(z.open("xl/sharedStrings.xml").read())
+    xmlformatter(z.open("xl/worksheets/sheet1.xml").read())
     
-#if __name__ == '__main__':
-#    main()
+    
+if __name__ == '__main__':
+    main()
