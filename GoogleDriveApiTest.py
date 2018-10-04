@@ -25,45 +25,51 @@ def xmlformatter(xmlfile):
     #if a tag is a closing tag, pop the last tag.
     #if a tag is its own closing tag, treat it as a string.
     #else, push the tag onto the stack.
-    #xmlrecursive(xmlfile)
 
     string = xmlfile
-    
     stack = []
+    t2 = -1
     while 0 != len(string):
+        string = string[t2+1:] #allows the "Continue" operator to work
+
         #find a tag
         t0 = string.find('<')
-        #t1 = string[t0+1].find('<') #checks if the tag is incomplete, or a less than sign.
+        t1 = string[t0+1].find('<')
         t2 = string.find('>')
-
+        
         if t0 == -1: #if there are no more tags, stop loop
-            print(' '*4*len(stack) + string)
+            displayline(stack, string)
             break
 
-        end = string[t0+1] == '/' #closing tag
-        if end:
-            stack.pop()
+        if t1 != -1:
+            if t1 < t2:
+                continue # < sign, not a tag
 
+        #valid tag
         displayline(stack, string[0:t0]) #before the tag
         displayline(stack, string[t0:t2+1]) #the tag
-
-        if not end and string[t2-1] != '/': #prevents a stack if the tag self closes
-            tag = string[t0+1:t2]
-            
-            stack.append(tag)
         
-        string = string[t2+1:]
-    
-    
-    
-    #tag = string[string.find('<')+1:string.find('>')]
-    #if tag[-1] == '/':
-    #    tag = tag[:-2]
-    #tag = tag.split()
-    #print(tag.split())
-    #print(
+        tagstr = string[t0+1:t2] #strip bracket
+        
+        closing = tagstr[0] == '/' #closing tag
+        if closing:
+            stack.pop()
 
+        selfclose = tagstr[-1] == '/'
+        if selfclose: #self closing tag, does not pop
+            tagstr = tagstr[:-1]
 
+        if not closing:
+            tag = tagstr.split()
+            data = dict()
+            print('.'*4*len(stack)+tag[0],end=": ")
+            for s in tag[1:]:
+                kv = s.split('=')
+                data[kv[0]] = kv[1].strip('\"')
+                print(kv[0], data[kv[0]], end=",")
+            print()
+            if not selfclose:
+                stack.append(tag[0])
     
     
 def main():
