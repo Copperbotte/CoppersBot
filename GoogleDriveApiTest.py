@@ -13,15 +13,40 @@ from apiclient.http import MediaIoBaseDownload
 #SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
 SCOPES = 'https://www.googleapis.com/auth/drive'
 
-def displayline(stack, s):
+def displayline(tabs, s):
     if 0 < len(s):
-        print(' '*4*len(stack) + s)
+        print(' '*4*tabs + s)
+
+class TagStruct:
+    """Struct to hold Tag data"""
+    def __init__(self, tag, attributedict=dict(), Parent=None):
+        """Tag is required, all other inputs are optional"""
+        self.Tag = tag
+        self.attributes = attributedict
+        self.children = []
+        self.parent = Parent
+    def Display(self, layer=0):
+        atrbstr = ""
+        for a in self.attributes:
+            atrbstr += " " + a + "=\"" + self.attributes[a] + "\""
+        displayline(layer, "<"+self.Tag + atrbstr[:-1]+">")
+        for c in self.children:
+            c.Display(layer+1)
+        displayline(layer, "</"+self.Tag+">")
+
+class TagContent:
+    """Struct to hold Tag content, with an identical Display function"""
+    def __init__(self, word=""):
+        self.word = word
+    def Display(self, layer=0):
+        if self.word != "":
+            displayline(layer, self.word)
 
 def xmlformatter(xmlfile):
     header = "b\'<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\\r\\n"#both files start with this same header
     xmlfile = str(xmlfile)[len(header):] #strip header
     #subdivide string into encapsulating tags
-    #find a tag, put its prefix string into an array
+    #find a tag, push prefix onto stack.
     #if a tag is a closing tag, pop the last tag.
     #if a tag is its own closing tag, treat it as a string.
     #else, push the tag onto the stack.
@@ -29,6 +54,8 @@ def xmlformatter(xmlfile):
     string = xmlfile
     stack = []
     t2 = -1
+    Root = TagStruct("Root")
+    Current = Root
     while 0 != len(string):
         string = string[t2+1:] #allows the "Continue" operator to work
 
@@ -38,7 +65,6 @@ def xmlformatter(xmlfile):
         t2 = string.find('>')
         
         if t0 == -1: #if there are no more tags, stop loop
-            displayline(stack, string)
             break
 
         if t1 != -1:
@@ -46,14 +72,16 @@ def xmlformatter(xmlfile):
                 continue # < sign, not a tag
 
         #valid tag
-        displayline(stack, string[0:t0]) #before the tag
-        displayline(stack, string[t0:t2+1]) #the tag
+        Current.children.append(TagContent(string[0:t0])) #before the tag
+        #displayline(len(stack), string[t0:t2+1]) #the tag
         
         tagstr = string[t0+1:t2] #strip bracket
         
         closing = tagstr[0] == '/' #closing tag
         if closing:
             stack.pop()
+            Current = Current.parent
+            continue
 
         selfclose = tagstr[-1] == '/'
         if selfclose: #self closing tag, does not pop
@@ -62,15 +90,18 @@ def xmlformatter(xmlfile):
         if not closing:
             tag = tagstr.split()
             data = dict()
-            print('.'*4*len(stack)+tag[0],end=": ")
+            #print('.'*4*len(stack)+tag[0],end=": ")
             for s in tag[1:]:
                 kv = s.split('=')
                 data[kv[0]] = kv[1].strip('\"')
-                print(kv[0], data[kv[0]], end=",")
-            print()
+            #    print(kv[0], data[kv[0]], end=",")
+            #print()
+            NewTag = TagStruct(tag[0],data,Current)
+            Current.children.append(NewTag)
             if not selfclose:
                 stack.append(tag[0])
-    
+                Current = NewTag
+    Root.Display()
     
 def main():
     """Shows basic usage of the Drive v3 API.
