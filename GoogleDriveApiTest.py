@@ -72,7 +72,9 @@ def xmlformatter(xmlfile):
                 continue # < sign, not a tag
 
         #valid tag
-        Current.children.append(TagContent(string[0:t0])) #before the tag
+        if 0 < len(string[0:t0]):
+            Current.children.append(TagContent(string[0:t0]))
+        #displayline(len(stack), string[0:t0]) #before the tag
         #displayline(len(stack), string[t0:t2+1]) #the tag
         
         tagstr = string[t0+1:t2] #strip bracket
@@ -90,19 +92,41 @@ def xmlformatter(xmlfile):
         if not closing:
             tag = tagstr.split()
             data = dict()
-            #print('.'*4*len(stack)+tag[0],end=": ")
+            #print(' '*4*len(stack)+tag[0],end=": ")
             for s in tag[1:]:
                 kv = s.split('=')
                 data[kv[0]] = kv[1].strip('\"')
-            #    print(kv[0], data[kv[0]], end=",")
+                #print(kv[0], data[kv[0]], end=",")
             #print()
             NewTag = TagStruct(tag[0],data,Current)
             Current.children.append(NewTag)
             if not selfclose:
                 stack.append(tag[0])
                 Current = NewTag
+    #Strip root node
+    if len(Root.children) == 1:
+        Root = Root.children[0]
+    else:
+        print("Root children count:", len(Root.children))
     Root.Display()
+    return Root
+
+def ParseVariableFile(Root):
+    """Parses variable xml file, returns a list. Inputs a TagStruct."""
+    if Root.Tag != "sst":
+        return
+    varlist = []
+    for x in Root.children: #strip non-si tags
+        if type(x).__name__ != "TagStruct":
+            continue
+        varlist.append(x.children[0].children[0].word) #skip si and t tags to get to the juicy center
+    return varlist
     
+def ParseSpreadsheet(Root):
+    
+
+    
+
 def main():
     """Shows basic usage of the Drive v3 API.
     Prints the names and ids of the first 10 files the user has access to.
@@ -137,7 +161,7 @@ def main():
     z = zipfile.ZipFile(fh)
     for n in z.namelist():
         print(n)
-    xmlformatter(z.open("xl/sharedStrings.xml").read())
+    ParseVariableFile(xmlformatter(z.open("xl/sharedStrings.xml").read()))
     xmlformatter(z.open("xl/worksheets/sheet1.xml").read())
     
     
