@@ -158,14 +158,14 @@ def ParseSpreadsheet(varlist, Root):
             w = varlist[w]
             print(w)
             spreadsheet[row][col] = w
-            #spreadsheet[row][col] = varlist[int(c.children[0].children[0].word)]
+            spreadsheet[row][col] = varlist[int(c.children[0].children[0].word)]
 
     print(spreadsheet)
 
     return True, spreadsheet
     
 
-def main():
+def FetchFile():
     """Shows basic usage of the Drive v3 API.
     Prints the names and ids of the first 10 files the user has access to.
     """
@@ -201,10 +201,11 @@ def main():
         print(n)
     success, varlist = ParseVariableFile(xmlformatter(z.open("xl/sharedStrings.xml").read()))
     if not success:
-        return
+        return False, None
     success, spreadsheet = ParseSpreadsheet(varlist, xmlformatter(z.open("xl/worksheets/sheet1.xml").read()))
     if not success:
-        return
+        return False, None
+    return True, spreadsheet
     
 if __name__ == '__main__':
-    main()
+    FetchFile()
