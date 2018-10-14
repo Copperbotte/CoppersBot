@@ -114,17 +114,55 @@ def xmlformatter(xmlfile):
 def ParseVariableFile(Root):
     """Parses variable xml file, returns a list. Inputs a TagStruct."""
     if Root.Tag != "sst":
-        return
+        return False, None
     varlist = []
-    for x in Root.children: #strip non-si tags
+    for x in Root.children: #strip content tags
         if type(x).__name__ != "TagStruct":
             continue
         varlist.append(x.children[0].children[0].word) #skip si and t tags to get to the juicy center
-    return varlist
+    return True, varlist
     
-def ParseSpreadsheet(Root):
-    
+def ParseSpreadsheet(varlist, Root):
+    """Parses spreadsheet data into a simple table. Inputs variable list, and Tagstruct."""
+    if Root.Tag != "worksheet":
+        return False, None
+    #Worksheet data is unique, convert list into dict
+    attributes = dict()
+    for x in Root.children: #strip content tags
+        if type(x).__name__ != "TagStruct":
+            continue
+        attributes[x.Tag] = x
 
+    #dimension, sheetViews, sheetFormatPr, cols, sheetData, pageMargins are available
+    #only dimension and sheetdata are useful for this bot, the rest are for formatting
+    #get dimensions
+    dim = [0,0]
+    for n in attributes["dimension"].attributes["ref"].split(":"):
+        col = 0
+        for x in n:
+            if not x.isalpha():
+                break
+            col += 1
+        dim[0] = ord(n[:col]) - ord('A') + 1 # row
+        dim[1] = int(n[col:])                # col
+
+    spreadsheet = [["" for x in range(dim[0])] for y in range(dim[1])] # extent of spreadsheet data
+    print(dim)
+    for r in attributes["sheetData"].children: # rows
+        row = int(r.attributes["r"])-1
+        for c in r.children:
+            col = ord(c.attributes["r"][:-len(str(row))]) - ord("A")
+            print(row, col)
+            w = int(c.children[0].children[0].word)
+            print(w)
+            w = varlist[w]
+            print(w)
+            spreadsheet[row][col] = w
+            #spreadsheet[row][col] = varlist[int(c.children[0].children[0].word)]
+
+    print(spreadsheet)
+
+    return True, spreadsheet
     
 
 def main():
@@ -161,9 +199,12 @@ def main():
     z = zipfile.ZipFile(fh)
     for n in z.namelist():
         print(n)
-    ParseVariableFile(xmlformatter(z.open("xl/sharedStrings.xml").read()))
-    xmlformatter(z.open("xl/worksheets/sheet1.xml").read())
-    
+    success, varlist = ParseVariableFile(xmlformatter(z.open("xl/sharedStrings.xml").read()))
+    if not success:
+        return
+    success, spreadsheet = ParseSpreadsheet(varlist, xmlformatter(z.open("xl/worksheets/sheet1.xml").read()))
+    if not success:
+        return
     
 if __name__ == '__main__':
     main()
