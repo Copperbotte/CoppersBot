@@ -1,0 +1,7 @@
+DiscordToken.txt
+commit messages.txt
+credentials.json
+download.xlsx
+token.json
+__pycache__/*
+*.pyc
