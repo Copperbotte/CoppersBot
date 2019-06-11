@@ -153,11 +153,6 @@ def ParseSpreadsheet(varlist, Root):
         for c in r.children:
             col = ord(c.attributes["r"][:-len(str(row))]) - ord("A")
             print(row, col)
-            w = int(c.children[0].children[0].word)
-            print(w)
-            w = varlist[w]
-            print(w)
-            spreadsheet[row][col] = w
             spreadsheet[row][col] = varlist[int(c.children[0].children[0].word)]
 
     print(spreadsheet)
@@ -189,6 +184,7 @@ def FetchFile():
             print('({1}) {0}'.format(item['name'], item['id']))
 
     fileid = "1pcW5wkpwrhhAH2brE6yofQcjilgF7seZ"
+    fileid = "1EeiZsoNcRKMzLjKEAqj-DPQR1dclRqn-W_oi3S2z8cg"
     results = service.files().get_media(fileId=fileid)
     fh = io.BytesIO()#io.FileIO("download.xlsx", "wb")
     downloader = MediaIoBaseDownload(fh, results)
