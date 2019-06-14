@@ -13,7 +13,7 @@ database = dict([("the big man", [":tophat:",":eyes:",":nose:",":lips:",":shirt:
 
 async def cmd_hello(message, msg, Client):
     msg = 'IDIOT DETECTED. INITIALIZING STANDARD GREETING PROTOCOL. Hello {0.author.mention}.'.format(message)
-    await Client.send_message(message.channel, msg)
+    await message.channel.send(msg)
 
 async def cmd_looksharp(message, msg, Client):
     success, spreadsheet = GoogleDriveApiTest.FetchFile()
@@ -25,7 +25,7 @@ async def cmd_looksharp(message, msg, Client):
         for n in colsheet:
             database[n[0]] = n[1:]
             out += n[0] + ", "
-        await Client.send_message(message.channel, out)
+        await message.channel.send(out)
 
 async def cmd_showme(message, msg, Client):
     word = msg[len('show_me'):].strip()
@@ -35,7 +35,7 @@ async def cmd_showme(message, msg, Client):
         for n in database[word]:
             out += n + '\n'
         out = out[:-1]
-    await Client.send_message(message.channel, out)
+    await message.channel.send(out)
 
 commands = {
     'hello' : cmd_hello,
@@ -55,7 +55,7 @@ async def on_message(message):
         
         if msg.startswith('piss off'):
             msg = 'pissing off'.format(message)
-            await client.send_message(message.channel, msg)
+            await message.channel.send(msg)
             await client.logout()
         elif msg.split()[0] in commands.keys():
             await commands[msg.split()[0]](message, msg, client)
@@ -67,7 +67,7 @@ async def on_message(message):
                     out += slang[c.lower()]
                 else:
                     out += c
-            await client.send_message(message.channel, out)
+            await message.channel.send(out)
 
 @client.event
 async def on_ready():

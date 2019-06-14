@@ -2,7 +2,7 @@
 print("module 1 loaded")
 
 async def Mod1func(message, msg, client):
-    await client.send_message(message.channel, "module 1 function")
+    await message.channel.send("module 1 function")
     
 
 def register():
