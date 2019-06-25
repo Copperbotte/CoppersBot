@@ -1,7 +1,7 @@
 
 print("module 1 loaded")
 
-async def Mod1func(message, msg, client):
+async def Mod1func(message):
     await message.channel.send("module 1 function")
     
 

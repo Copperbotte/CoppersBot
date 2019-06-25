@@ -2,7 +2,7 @@
 import numpy as np
 print("Numpy module loaded")
 
-async def Numpyfunc(message, msg, client):
+async def Numpyfunc(message):
     out = "Numpy sine: " +  str(np.sin(10.0))
     await message.channel.send(out)
 
