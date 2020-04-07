@@ -11,17 +11,15 @@ from google.auth.transport.requests import Request
 import matplotlib.pyplot as plt
 import numpy as np
 
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 USERID = '<@!490655530172547073>'
 client = discord.Client()
 
-def getData():
-    spreadsheet = "10zcHJfs8IV1IiN2JWEyPDluZhxsD7HNp0KU1WMfHRvw"
-    ssrange = "B1:N2"
+def initSheets(spreadsheet):
     creds = None
     print("creds")
-    picklepath = r'token.pickle'
+    picklepath = 'token.pickle'
     if os.path.exists(picklepath):
         with open(picklepath, 'rb') as token:
             creds = pickle.load(token)
@@ -29,7 +27,7 @@ def getData():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(r'credentials.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
         with open(picklepath, 'wb') as token:
             pickle.dump(creds, token)
@@ -37,12 +35,36 @@ def getData():
     service = build('sheets', 'v4', credentials=creds)
     print("sheet")
     sheet = service.spreadsheets()
+    return sheet
+
+def getData(ssrange):
+    spreadsheet = "10zcHJfs8IV1IiN2JWEyPDluZhxsD7HNp0KU1WMfHRvw"
+    sheet = initSheets(spreadsheet)
     print("get")
     result = sheet.values().get(spreadsheetId=spreadsheet, range=ssrange).execute()
     return result.get('values', [])
 
-def getPlotImg():
-    values = getData()
+def setData(ssrange):
+    spreadsheet = "10zcHJfs8IV1IiN2JWEyPDluZhxsD7HNp0KU1WMfHRvw"
+    sheet = initSheets(spreadsheet)
+    print("set")
+    body = {'values': [["12"]]}
+    result = sheet.values().update(spreadsheetId=spreadsheet, range=ssrange,
+                                   valueInputOption="RAW", body=body).execute()
+    print(result.get('updatedCells'))
+    return result.get('updatedCells')
+
+def toA1(c, r):
+    c += 1
+    out = ''
+    while 0 < c:
+        c, rem = divmod(c - 1, 26)
+        out = chr(ord('A') + rem) + out
+    out += str(r + 1)
+    return out
+
+def getPlotImg(ssrange):
+    values = getData(ssrange)
     x = values[0][1:]
     y = values[1][1:]
     if len(y) == 0:
@@ -72,15 +94,17 @@ async def on_message(message):
     msg = message.content
     print(msg)
 
-    cmd = msg.split()[0].strip()
-
+    args = list(map(lambda s: s.strip(), msg.split()))
+    cmd = args[0]
+    args = args[1:]
+    
     if cmd == "quit":
         await message.channel.send("quitting")
         await client.logout()
         return
 
     if cmd == "stonk":
-        img = getPlotImg()
+        img = getPlotImg("B1:N2")
         buf = io.BytesIO()
         plt.imsave(buf, img, format='png')
         buf.seek(0)
@@ -88,6 +112,10 @@ async def on_message(message):
         await message.channel.send(file=dimg)
         return
     
+    if cmd == "set":
+        res = setData(toA1(0,1))
+        return
+        
 		
 @client.event
 async def on_ready():
