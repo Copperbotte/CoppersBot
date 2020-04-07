@@ -7,6 +7,9 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 
 USERID = '<@!490655530172547073>'
@@ -37,6 +40,24 @@ def getData():
     result = sheet.values().get(spreadsheetId=spreadsheet, range=ssrange).execute()
     return result.get('values', [])
 
+def getPlotImg():
+    values = getData()
+    x = values[0][1:]
+    y = values[1][1:]
+    if len(y) == 0:
+        y = [0]
+    y2 = []
+    for v in y:
+        y2.append(int(v))
+    if len(y2) < len(x):
+        diff = len(x) - len(y2)
+    for i in range(diff):
+        y2.append(y2[-1])
+    fig, ax = plt.subplots()
+    ax.plot(x,y2)
+    fig.canvas.draw()
+    plt.imsave('plot.png', np.array(fig.canvas.renderer.buffer_rgba()))
+
 @client.event
 async def on_message(message):
     # we do not want the bot to reply to itself
@@ -58,13 +79,8 @@ async def on_message(message):
         return
 
     if cmd == "get":
-        data = getData()
-        msg = ""
-        for row in data:
-            for col in row:
-                msg += str(col) + ' '
-            msg += '\n'
-        await message.channel.send(msg)
+        getPlotImg()
+        await message.channel.send("Image generated")
         return
     
 		
