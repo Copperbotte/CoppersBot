@@ -44,11 +44,11 @@ def getData(ssrange):
     result = sheet.values().get(spreadsheetId=spreadsheet, range=ssrange).execute()
     return result.get('values', [])
 
-def setData(ssrange):
+def setData(ssrange, data=[["12"]]):
     spreadsheet = "10zcHJfs8IV1IiN2JWEyPDluZhxsD7HNp0KU1WMfHRvw"
     sheet = initSheets(spreadsheet)
     print("set")
-    body = {'values': [["12"]]}
+    body = {'values': data}
     result = sheet.values().update(spreadsheetId=spreadsheet, range=ssrange,
                                    valueInputOption="RAW", body=body).execute()
     print(result.get('updatedCells'))
@@ -118,12 +118,18 @@ async def on_message(message):
 
     if cmd == "register":
         data = getData("Sheet1")
-        data = list(map(lambda x: x[1], data))[1:]
-        print(data)
-        if args[0] in data:
-            await message.channel.send(args[0] + " is in database")
+        data = list(map(lambda x: x[0], data))[1:]
+        if str(message.author.id) not in data:
+            newdata = [[str(message.author.id), message.author.display_name]]
+            rang = toA1(0,1+len(data)) + ':' + toA1(1,1+len(data))
+            setData(rang, data=newdata)
+            msg = message.author.display_name + " is now registered"
+            print(msg)
+            await message.channel.send(msg)
             return
-        await message.channel.send(args[0] + " is not in database")
+        msg = message.author.display_name + " is in database"
+        print(msg)
+        await message.channel.send(msg)
         return
         
         
