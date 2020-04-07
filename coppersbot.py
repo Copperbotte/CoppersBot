@@ -115,6 +115,17 @@ async def on_message(message):
     if cmd == "set":
         res = setData(toA1(0,1))
         return
+
+    if cmd == "register":
+        data = getData("Sheet1")
+        data = list(map(lambda x: x[1], data))[1:]
+        print(data)
+        if args[0] in data:
+            await message.channel.send(args[0] + " is in database")
+            return
+        await message.channel.send(args[0] + " is not in database")
+        return
+        
         
 		
 @client.event
