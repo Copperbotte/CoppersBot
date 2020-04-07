@@ -67,21 +67,17 @@ def toA1(c, r):
 def getPlotImg():
     sheet = getData("Sheet1")
     values = [x[1:] for x in sheet]
-    x = values[0][1:]
     fig, ax = plt.subplots()
-    for n in range(len(sheet) - 1):
-        y = values[n+1][1:]
-        if len(y) == 0:
-            y = [0]
-        y2 = []
-        for v in y:
-            y2.append(int(v))
-        diff = 0
-        if len(y2) < len(x):
-            diff = len(x) - len(y2)
-        for i in range(diff):
-            y2.append(y2[-1])
-        ax.plot(x,y2)
+    ax.set_title(values[0][0])
+    for r in range(1, len(sheet)):
+        x = []
+        y = []
+        for i in range(2, len(sheet[r])):
+            if sheet[r][i] != '':
+                x.append(sheet[0][i])
+                y.append(int(sheet[r][i]))
+        ax.plot(x,y)
+        ax.annotate(s=sheet[r][1], xy=(x[-1],y[-1]), xytext=(5,0), textcoords='offset points')
     fig.canvas.draw()
     return np.array(fig.canvas.renderer.buffer_rgba())
 
@@ -129,6 +125,9 @@ async def on_message(message):
     args = list(map(lambda s: s.strip(), msg.split()))
     cmd = args[0]
     args = args[1:]
+
+    if message.author.id != 133719771702099968:
+        return
     
     if cmd == "quit":
         await message.channel.send("quitting")
@@ -157,7 +156,15 @@ async def on_message(message):
         data = getData("Sheet1")
         await checkAndRegister(message, data)
         return
-		
+
+    if cmd == "getids":
+        count = 0
+        async for m in message.channel.history(limit=int(args[0])):
+            print(m.author.id, m.author.display_name)
+            count += 1
+        await message.channel.send(":eyes:")
+        return
+    
 @client.event
 async def on_ready():
     global USERID
