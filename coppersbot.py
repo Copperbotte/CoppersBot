@@ -63,23 +63,43 @@ def toA1(c, r):
     out += str(r + 1)
     return out
 
-def getPlotImg(ssrange):
-    values = getData(ssrange)
+def getPlotImg():
+    sheet = getData("Sheet1")
+    values = [x[1:] for x in sheet]
     x = values[0][1:]
-    y = values[1][1:]
-    if len(y) == 0:
-        y = [0]
-    y2 = []
-    for v in y:
-        y2.append(int(v))
-    if len(y2) < len(x):
-        diff = len(x) - len(y2)
-    for i in range(diff):
-        y2.append(y2[-1])
     fig, ax = plt.subplots()
-    ax.plot(x,y2)
+    for n in range(len(sheet) - 1):
+        y = values[n+1][1:]
+        if len(y) == 0:
+            y = [0]
+        y2 = []
+        for v in y:
+            y2.append(int(v))
+        diff = 0
+        if len(y2) < len(x):
+            diff = len(x) - len(y2)
+        for i in range(diff):
+            y2.append(y2[-1])
+        ax.plot(x,y2)
     fig.canvas.draw()
     return np.array(fig.canvas.renderer.buffer_rgba())
+
+async def checkRegistered(user, sheet):
+    data = getData("Sheet1")
+    data = list(map(lambda x: x[0], data))[1:]
+    if str(message.author.id) not in data:
+        newdata = [[str(message.author.id), message.author.display_name]]
+        rang = toA1(0,1+len(data)) + ':' + toA1(1,1+len(data))
+        setData(rang, data=newdata)
+        msg = message.author.display_name + " is now registered"
+        print(msg)
+        await message.channel.send(msg)
+        return
+    msg = message.author.display_name + " is in database"
+    print(msg)
+    await message.channel.send(msg)
+    return
+
 
 @client.event
 async def on_message(message):
@@ -104,7 +124,7 @@ async def on_message(message):
         return
 
     if cmd == "stonk":
-        img = getPlotImg("B1:N2")
+        img = getPlotImg()
         buf = io.BytesIO()
         plt.imsave(buf, img, format='png')
         buf.seek(0)
