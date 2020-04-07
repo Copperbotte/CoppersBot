@@ -1,6 +1,7 @@
 
 import os
 import io
+from datetime import datetime
 import discord
 
 import pickle
@@ -84,22 +85,33 @@ def getPlotImg():
     fig.canvas.draw()
     return np.array(fig.canvas.renderer.buffer_rgba())
 
-async def checkRegistered(user, sheet):
-    data = getData("Sheet1")
+async def checkAndRegister(message, data):
     data = list(map(lambda x: x[0], data))[1:]
-    if str(message.author.id) not in data:
+    #if the user isn't registered, give them a new row
+    if str(message.author.id) not in data: 
         newdata = [[str(message.author.id), message.author.display_name]]
-        rang = toA1(0,1+len(data)) + ':' + toA1(1,1+len(data))
-        setData(rang, data=newdata)
+        datarange = toA1(0,1+len(data)) + ':' + toA1(1,1+len(data))
+        setData(datarange, data=newdata)
         msg = message.author.display_name + " is now registered"
         print(msg)
         await message.channel.send(msg)
-        return
+        return len(data)
     msg = message.author.display_name + " is in database"
     print(msg)
     await message.channel.send(msg)
-    return
+    return data.index(str(message.author.id))
 
+def getColumnFromCurrentTime(sheet):
+    date = datetime.date(datetime.strptime(sheet[0][1], '%Y-%m-%d'))
+    now = datetime.date(datetime.now())
+    diff = (now - date).days - 1
+    hour = datetime.time(datetime.now()).hour
+    print('date', diff)
+    print('hour', hour)
+    n = 2 * diff
+    if 12 <= hour:
+        n += 1
+    return n
 
 @client.event
 async def on_message(message):
@@ -123,7 +135,7 @@ async def on_message(message):
         await client.logout()
         return
 
-    if cmd == "stonk":
+    if cmd == "graph":
         img = getPlotImg()
         buf = io.BytesIO()
         plt.imsave(buf, img, format='png')
@@ -132,27 +144,19 @@ async def on_message(message):
         await message.channel.send(file=dimg)
         return
     
-    if cmd == "set":
-        res = setData(toA1(0,1))
+    if cmd == "stonk":
+        data = getData("Sheet1")
+        row = 1 + await checkAndRegister(message, data)
+        col = 2 + getColumnFromCurrentTime(data)
+        print('row', row)
+        print('col', col)
+        setData(toA1(col, row), [[args[0]]])
         return
 
     if cmd == "register":
         data = getData("Sheet1")
-        data = list(map(lambda x: x[0], data))[1:]
-        if str(message.author.id) not in data:
-            newdata = [[str(message.author.id), message.author.display_name]]
-            rang = toA1(0,1+len(data)) + ':' + toA1(1,1+len(data))
-            setData(rang, data=newdata)
-            msg = message.author.display_name + " is now registered"
-            print(msg)
-            await message.channel.send(msg)
-            return
-        msg = message.author.display_name + " is in database"
-        print(msg)
-        await message.channel.send(msg)
+        await checkAndRegister(message, data)
         return
-        
-        
 		
 @client.event
 async def on_ready():
