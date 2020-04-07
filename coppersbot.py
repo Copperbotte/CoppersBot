@@ -1,5 +1,6 @@
 
 import os
+import io
 import discord
 
 import pickle
@@ -56,7 +57,7 @@ def getPlotImg():
     fig, ax = plt.subplots()
     ax.plot(x,y2)
     fig.canvas.draw()
-    plt.imsave('plot.png', np.array(fig.canvas.renderer.buffer_rgba()))
+    return np.array(fig.canvas.renderer.buffer_rgba())
 
 @client.event
 async def on_message(message):
@@ -78,9 +79,13 @@ async def on_message(message):
         await client.logout()
         return
 
-    if cmd == "get":
-        getPlotImg()
-        await message.channel.send("Image generated")
+    if cmd == "stonk":
+        img = getPlotImg()
+        buf = io.BytesIO()
+        plt.imsave(buf, img, format='png')
+        buf.seek(0)
+        dimg = discord.File(buf, 'stonk.png')
+        await message.channel.send(file=dimg)
         return
     
 		
