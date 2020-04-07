@@ -1,11 +1,6 @@
-Modules/flightaware.py
-Modules/joecoin.py
-DiscordToken.txt
-commit messages.txt
 credentials.json
-download.xlsx
+DiscordToken.txt
 token.json
-database.json
-Modules/joecoin.json
+token.pickle
 __pycache__/*
 *.pyc
