@@ -14,8 +14,14 @@ import numpy as np
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
-USERID = '<@!490655530172547073>'
+USERID = ['<@!490655530172547073>', '<@490655530172547073>']
+stalkchannel = None
+SHEET = "Sheet2"
 client = discord.Client()
+
+async def echo(msg, message):
+    print(msg)
+    await message.channel.send(msg)
 
 def initSheets(spreadsheet):
     creds = None
@@ -49,8 +55,9 @@ def setData(ssrange, data=[["12"]]):
     spreadsheet = "10zcHJfs8IV1IiN2JWEyPDluZhxsD7HNp0KU1WMfHRvw"
     sheet = initSheets(spreadsheet)
     print("set")
+    newrange = SHEET + '!' + ssrange
     body = {'values': data}
-    result = sheet.values().update(spreadsheetId=spreadsheet, range=ssrange,
+    result = sheet.values().update(spreadsheetId=spreadsheet, range=newrange,
                                    valueInputOption="RAW", body=body).execute()
     print(result.get('updatedCells'))
     return result.get('updatedCells')
@@ -65,7 +72,7 @@ def toA1(c, r):
     return out
 
 def getPlotImg():
-    sheet = getData("Sheet1")
+    sheet = getData(SHEET)
     values = [x[1:] for x in sheet]
     fig, ax = plt.subplots()
     ax.set_title(values[0][0])
@@ -89,12 +96,10 @@ async def checkAndRegister(message, data):
         datarange = toA1(0,1+len(data)) + ':' + toA1(1,1+len(data))
         setData(datarange, data=newdata)
         msg = message.author.display_name + " is now registered"
-        print(msg)
-        await message.channel.send(msg)
+        await echo(msg, message)
         return len(data)
-    msg = message.author.display_name + " is in database"
-    print(msg)
-    await message.channel.send(msg)
+    #msg = message.author.display_name + " is in database"
+    #await echo(msg, message)
     return data.index(str(message.author.id))
 
 def getColumnFromCurrentTime(sheet):
@@ -115,10 +120,22 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if not message.content.startswith(USERID):
-        return
+    #global stalkchannel
+    #if stalkchannel == message.channel.id:
+    #    word = message.content.strip().split()[0].strip()
+    #    filtered = ''.join(list(filter(lambda c: c.isdigit(), word)))
+    #    if len(filtered) != 0:
+    #        await message.add_reaction(697974246059671552)
+    #        return
     
-    message.content = message.content[len(USERID):].lstrip()
+    if not (message.content.startswith(USERID[0]) or message.content.startswith(USERID[1])):
+        return
+
+    cut = len(USERID[0])
+    if message.content.startswith(USERID[1]):
+        cut = len(USERID[1])
+    
+    message.content = message.content[cut:].lstrip()
     msg = message.content
     print(msg)
 
@@ -126,12 +143,28 @@ async def on_message(message):
     cmd = args[0]
     args = args[1:]
 
-    if message.author.id != 133719771702099968:
-        return
+    stonkshort = all(map(str.isdigit, cmd))
     
-    if cmd == "quit":
-        await message.channel.send("quitting")
-        await client.logout()
+    if cmd == "stonk" or stonkshort:
+        data = getData(SHEET)
+        row = 1 + await checkAndRegister(message, data)
+        col = 2 + getColumnFromCurrentTime(data)
+        
+        if stonkshort:
+            value = cmd
+        else:
+            value = args[0]
+        print(value)
+        print('row', row)
+        print('col', col)
+        setData(toA1(col, row), [[value]])
+        await message.add_reaction("\U0001F360")
+        return
+
+    if cmd == "register":
+        data = getData(SHEET)
+        print(data)
+        await checkAndRegister(message, data)
         return
 
     if cmd == "graph":
@@ -143,18 +176,17 @@ async def on_message(message):
         await message.channel.send(file=dimg)
         return
     
-    if cmd == "stonk":
-        data = getData("Sheet1")
-        row = 1 + await checkAndRegister(message, data)
-        col = 2 + getColumnFromCurrentTime(data)
-        print('row', row)
-        print('col', col)
-        setData(toA1(col, row), [[args[0]]])
+    if message.author.id != 133719771702099968:
+        return
+    
+    if cmd == "quit":
+        await message.channel.send("quitting")
+        await client.logout()
         return
 
-    if cmd == "register":
-        data = getData("Sheet1")
-        await checkAndRegister(message, data)
+    if cmd == "usechannel":
+        stalkchannel = message.channel.id
+        await echo("using this channel for stalk market", message)
         return
 
     if cmd == "getids":
@@ -168,10 +200,11 @@ async def on_message(message):
 @client.event
 async def on_ready():
     global USERID
-    USERID = '<@!' + str(client.user.id) + '>'
+    USERID[0] = '<@!' + str(client.user.id) + '>'
+    USERID[1] = '<@' + str(client.user.id) + '>'
     print('Logged in as')
     print(client.user.name)
-    print(USERID)
+    print(USERID[1])
     print('------')
 
 if __name__ == "__main__":
